@@ -182,18 +182,13 @@
 
           <div class="sav-col">
             <span class="sav-label">Mixes</span>
-            <a href="https://soundcloud.com/chrisdilorenzo/tracks" target="_blank" rel="noopener noreferrer" class="sc-card">
-              <div class="sc-card-icon">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M1.175 12.225c-.015 0-.03.006-.044.006C.504 12.231 0 11.73 0 11.109c0-.574.452-1.043 1.018-1.08.015 0 .03.003.044.003C1.063 9.03 2.063 7.5 3.5 7.5c.188 0 .373.023.553.067C4.728 6.62 5.762 6 6.938 6c2.125 0 3.75 1.813 3.75 4.031v.157h.125c.69 0 1.25.563 1.25 1.25 0 .688-.56 1.25-1.25 1.25H1.175zm11.1-.088c-.013 0-.025.006-.038.006-.42 0-.762-.344-.762-.769 0-.398.307-.724.7-.757.013 0 .025.003.038.003.287-.74.995-1.264 1.825-1.264.152 0 .3.02.444.056C14.902 9.5 15.73 9 16.688 9c1.65 0 2.875 1.375 2.875 3.063v.125H19.7c.512 0 .925.413.925.925 0 .512-.413.925-.925.925H12.275zm9.5 1.688c-.012 0-.025.006-.038.006-.42 0-.762-.344-.762-.769 0-.398.307-.724.7-.757.013 0 .025.003.038.003.174-.45.604-.766 1.113-.766.094 0 .186.012.275.034C23.44 11.938 24 12.563 24 13.313c0 .812-.625 1.437-1.4 1.437l-9.875.001c-.462 0-.837-.375-.837-.837 0-.462.375-.837.837-.837l9.09-.162z"/>
-                </svg>
-              </div>
-              <div class="sc-card-text">
-                <span class="sc-card-name">DILORENZO</span>
-                <span class="sc-card-sub">Listen on SoundCloud</span>
-              </div>
-              <span class="sc-card-arrow">↗</span>
-            </a>
+            <div class="sc-wrap">
+              <iframe id="sc-player"
+                src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/chrisdilorenzo/tracks&color=%233A7E70&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false&visual=true"
+                allow="autoplay"
+                scrolling="no"
+                frameborder="no"></iframe>
+            </div>
           </div>
 
         </div>
@@ -404,13 +399,6 @@
   </div>
 </section>
 
-
-<!-- Hidden SC iframe — powers Widget API / soundbar (must NOT have loading="lazy") -->
-<iframe id="sc-player"
-  src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/chrisdilorenzo/tracks&color=%23120E08&auto_play=false&hide_related=true&show_comments=false&show_user=false&show_reposts=false&show_teaser=false"
-  style="position:absolute;width:1px;height:1px;left:-9999px;top:-9999px;border:none;overflow:hidden;"
-  allow="autoplay"
-  aria-hidden="true"></iframe>
 
 <!-- ============================================================
      PERSISTENT SOUNDBAR
