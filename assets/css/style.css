@@ -496,7 +496,7 @@ nav#nav.open .nav-mobile { display:flex; }
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: clamp(24px,4vw,52px);
-  align-items: start;
+  align-items: stretch; /* both columns same height — photos fill to match text */
 }
 
 .comm-h2 { /* inherits .sec-h2, color set by .community-sec .sec-h2 */ }
@@ -525,16 +525,19 @@ nav#nav.open .nav-mobile { display:flex; }
 }
 .vstat-l { font-size:9px; letter-spacing:.3em; text-transform:uppercase; color:rgba(18,14,8,.42); }
 
-/* Community right column */
-.comm-visual { display:flex; flex-direction:column; gap:16px; }
+/* Community right column — photos stretch to exact height of text column */
+.comm-visual { display:flex; flex-direction:column; }
 .comm-photos {
+  flex: 1;           /* fill remaining height of .comm-visual */
+  min-height: 0;     /* allow shrinking inside flex */
   display: grid;
   grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;   /* 2 equal rows that fill available height */
   gap: 5px;
   border-radius: var(--r);
   overflow: hidden;
 }
-.cp-item { aspect-ratio:4/3; overflow:hidden; }
+.cp-item { min-height: 0; overflow: hidden; } /* no aspect-ratio — height driven by grid rows */
 .cp-item img { width:100%; height:100%; object-fit:cover; transition:transform .5s var(--ease); }
 .cp-item:hover img { transform:scale(1.06); }
 
@@ -839,8 +842,10 @@ nav#nav.open .nav-mobile { display:flex; }
   .gallery-row { grid-template-columns:1fr 1fr; }
   .gallery-row .gp-item { aspect-ratio:4/3; }
   .gallery-row .gp-item:last-child { display:none; }
-  /* Community: stack on small screens */
+  /* Community: stack on small screens; restore aspect-ratio since height can't be fluid on 1-col */
   .community-grid { grid-template-columns:1fr; }
+  .comm-photos { grid-template-rows: unset; }
+  .cp-item { aspect-ratio: 4/3; }
 }
 
 /* ============================================================
