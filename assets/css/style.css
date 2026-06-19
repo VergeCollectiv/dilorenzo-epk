@@ -494,9 +494,9 @@ nav#nav.open .nav-mobile { display:flex; }
 
 .community-grid {
   display: grid;
-  grid-template-columns: 5fr 7fr;
+  grid-template-columns: 1fr 1fr;
   gap: clamp(24px,4vw,52px);
-  align-items: center;
+  align-items: start;
 }
 
 .comm-h2 { /* inherits .sec-h2, color set by .community-sec .sec-h2 */ }
@@ -534,7 +534,7 @@ nav#nav.open .nav-mobile { display:flex; }
   border-radius: var(--r);
   overflow: hidden;
 }
-.cp-item { aspect-ratio:3/4; overflow:hidden; }
+.cp-item { aspect-ratio:4/3; overflow:hidden; }
 .cp-item img { width:100%; height:100%; object-fit:cover; transition:transform .5s var(--ease); }
 .cp-item:hover img { transform:scale(1.06); }
 
