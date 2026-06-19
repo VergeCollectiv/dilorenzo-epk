@@ -293,7 +293,7 @@ nav#nav.open .nav-mobile { display:flex; }
   display: grid;
   grid-template-columns: 5fr 7fr;
   gap: clamp(48px,8vw,100px);
-  align-items: start;
+  align-items: center;
 }
 .about-portrait { position:sticky; top:clamp(88px,12vw,120px); }
 .portrait-wrap { aspect-ratio:3/4; border-radius:var(--r-lg); overflow:hidden; background:var(--paper-2); }
@@ -437,7 +437,7 @@ nav#nav.open .nav-mobile { display:flex; }
      (text is 16.9% of the 4500×4500 PNG; 130px image → 22px text on mobile, 379px → 64px desktop)
    - Bar height = text_size + 24px (12px tight padding above/below): clamp(46px,7vw,88px)
    - overflow:hidden clips the PNG whitespace — only the text + 12px breathing room shows
-   Text center X in PNG: 38.6% from left. Logo transform: translate(-38.6%,-50%). */
+   Text center X/Y in PNG: exactly 50%/50% (measured via pixel scan). Logo transform: translate(-50%,-50%). */
 .verge-bar {
   display: block;
   position: relative;
@@ -470,7 +470,7 @@ nav#nav.open .nav-mobile { display:flex; }
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-38.6%, -50%); /* centers visible text (at 38.6% X, ~50% Y in PNG) */
+  transform: translate(-50%, -50%); /* confirmed: content center X = 50% of PNG width */
   height: clamp(130px, 32.5vw, 379px); /* independent of bar height — keeps text at Community size */
   width: auto;
   display: block;
@@ -501,8 +501,8 @@ nav#nav.open .nav-mobile { display:flex; }
 
 .comm-h2 { /* inherits .sec-h2, color set by .community-sec .sec-h2 */ }
 .comm-body {
-  font-size: clamp(16px,1.9vw,22px);
-  line-height: 1.6;
+  font-size: clamp(14px,1.4vw,16px);
+  line-height: 1.65;
   color: rgba(18,14,8,.62);
   margin-bottom: clamp(24px,3vw,36px);
 }
