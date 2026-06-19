@@ -496,13 +496,13 @@ nav#nav.open .nav-mobile { display:flex; }
   display: grid;
   grid-template-columns: 5fr 7fr;
   gap: clamp(24px,4vw,52px);
-  align-items: start;
+  align-items: center;
 }
 
 .comm-h2 { /* inherits .sec-h2, color set by .community-sec .sec-h2 */ }
 .comm-body {
-  font-size: clamp(14px,1.4vw,16px);
-  line-height: 1.65;
+  font-size: clamp(15px,1.55vw,17px);
+  line-height: 1.78;
   color: rgba(18,14,8,.62);
   margin-bottom: clamp(24px,3vw,36px);
 }

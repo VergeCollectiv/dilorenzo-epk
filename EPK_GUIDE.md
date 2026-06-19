@@ -370,9 +370,11 @@ git push
 **Gallery ticker label takes up too much space on mobile**
 - The `.ticker-label` is hidden at ≤700px via `display: none`. If it's showing, check that the mobile media query is present in `style.css`.
 
+**Community verge bar logo off-centre**
+- The `verge-logo.png` is a 4500×4500 square PNG. Content center is confirmed at exactly 50%/50% (measured via pixel alpha scan). Use `transform: translate(-50%, -50%)` — do NOT use `-38.6%` (that was a bad measurement from an earlier session). The bar height is decoupled from the logo image height: bar = `clamp(46px,7vw,88px)` (tight 12px padding), logo image = `clamp(130px,32.5vw,379px)`. `overflow:hidden` clips the PNG whitespace — only the text + breathing room shows.
+
 **Community section looks bad on mobile / verge-col visible on mobile**
-- `.verge-col` (the large clickable logo card) is hidden at ≤960px via `display: none`. On tablet, community shows as 2-col (text + photos). On mobile it stacks to 1 col.
-- On mobile, the Verge logo is shown via `.verge-mob-link` — a small inline logo + arrow inside `.comm-text`. This appears below the stats block only at ≤960px. It's a separate element from `.verge-col`; both can't be visible at the same time.
+- Community uses a full-width `.verge-bar` above a 2-col grid (`5fr 7fr` — photos wider). Grid uses `align-items: center` so photos vertically align to the middle of the text block. On mobile (≤700px) grid stacks to 1 col.
 
 **Gallery looks different above vs. below the ticker on mobile**
 - Both gallery rows use the same CSS class `.gallery-row`. On mobile (≤700px): `grid-template-columns: 1fr 1fr`, `aspect-ratio: 4/3`, and `.gp-item:last-child { display: none }`. This hides the 3rd photo and shows 2 side-by-side at the same ratio in both rows — identical above and below the ticker. Do not add a breakpoint that overrides this for smaller screens (e.g. a 480px rule showing 3 items) — that breaks the congruence.
@@ -411,3 +413,10 @@ git push
 | 2026-06-19 | SC embed: classic (no visual=true) track-list player; sc-wrap fixed height clamp(300px,38vh,420px) |
 | 2026-06-19 | Community first photo: object-position center 20% to frame Verge sign |
 | 2026-06-19 | Count-up stats: fire via expandCard() not IntersectionObserver; reset on collapse so re-open replays |
+| 2026-06-19 | Verge bar: height decoupled from logo image — bar clamp(46px,7vw,88px), logo clamp(130px,32.5vw,379px); overflow:hidden clips whitespace; translate(-50%,-50%) confirmed correct |
+| 2026-06-19 | Mobile section-card: border-radius 20px 20px 0 0 (top only) — preserves stacked-folder look |
+| 2026-06-19 | YouTube thumbnail: watch-poster.jpg = chandelier/DJ shot (verge1.jpg from Speakeasy event) |
+| 2026-06-19 | About: align-items:center on .about-inner so portrait centres vertically next to text |
+| 2026-06-19 | About tags: 'Minimal House'→'house', 'Deep Tech'→'minimal' |
+| 2026-06-19 | Community: 3 separate paragraphs; font matches About body clamp(15px,1.55vw,17px); grid align-items:center |
+| 2026-06-19 | Community photos: square 1/1 → portrait 3/4 tiles; grid 1fr 1fr → 5fr 7fr |
