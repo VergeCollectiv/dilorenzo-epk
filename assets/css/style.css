@@ -526,7 +526,7 @@ nav#nav.open .nav-mobile { display:flex; }
 .vstat-l { font-size:9px; letter-spacing:.3em; text-transform:uppercase; color:rgba(18,14,8,.42); }
 
 /* Community right column — photos stretch to exact height of text column */
-.comm-visual { display:flex; flex-direction:column; }
+.comm-visual { display:flex; flex-direction:column; height:100%; }
 .comm-photos {
   flex: 1;           /* fill remaining height of .comm-visual */
   min-height: 0;     /* allow shrinking inside flex */
