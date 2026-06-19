@@ -25,6 +25,8 @@
 })();
 
 // ---- SCROLL REVEAL ---- //
+// Only observes elements outside accordion bodies (hero, etc.)
+// Accordion reveals fire immediately on open via expandCard()
 (function () {
   if (!('IntersectionObserver' in window)) {
     document.querySelectorAll('.reveal').forEach(el => el.classList.add('in'));
@@ -35,7 +37,10 @@
       if (e.isIntersecting) { e.target.classList.add('in'); obs.unobserve(e.target); }
     });
   }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
-  document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+  // Only observe reveals that are NOT inside an accordion body
+  document.querySelectorAll('.reveal').forEach(el => {
+    if (!el.closest('.acc-body')) obs.observe(el);
+  });
 })();
 
 // ---- SECTION CARD FADE-IN ---- //
@@ -86,24 +91,27 @@
   const playBtn     = document.getElementById('sbPlayBtn');
   const trackLbl    = document.getElementById('sbTrack');
   const progressFil = document.getElementById('sbProgress');
+  const scFallback  = document.getElementById('sbScFallback');
   if (!iframe || !soundbar) return;
 
   let playing = false;
   let widget  = null;
+  let widgetReady = false;
 
   function attachWidget() {
     if (typeof SC === 'undefined' || widget) return;
     try {
       widget = SC.Widget(iframe);
-      // READY fires once the widget has loaded its first track
       widget.bind(SC.Widget.Events.READY, () => {
-        // Show the most recent track title in the soundbar label
+        widgetReady = true;
         widget.getCurrentSound(s => {
           if (s && trackLbl) trackLbl.textContent = s.title || 'DILORENZO on SoundCloud';
         });
         widget.bind(SC.Widget.Events.PLAY, () => {
           playing = true;
           soundbar.classList.add('playing');
+          // Hide fallback SC link once audio is confirmed playing
+          if (scFallback) scFallback.style.display = 'none';
           widget.getCurrentSound(s => {
             if (s && trackLbl) trackLbl.textContent = s.title || 'DILORENZO on SoundCloud';
           });
@@ -115,14 +123,25 @@
             progressFil.style.width = (e.relativePosition * 100) + '%';
           }
         });
-        if (playBtn) {
-          playBtn.addEventListener('click', () => { playing ? widget.pause() : widget.play(); });
-        }
       });
-    } catch (err) { /* Widget unavailable — soundbar stays idle */ }
+
+      if (playBtn) {
+        playBtn.addEventListener('click', () => {
+          if (!widgetReady) return;
+          playing ? widget.pause() : widget.play();
+          // On mobile, if audio doesn't start within 800ms (iOS block), show SC link
+          if (!playing) {
+            setTimeout(() => {
+              if (!playing && scFallback) scFallback.style.display = 'flex';
+            }, 800);
+          }
+        });
+      }
+    } catch (err) {
+      if (scFallback) scFallback.style.display = 'flex';
+    }
   }
 
-  // SC API script is async — try immediately, fall back to load event
   if (typeof SC !== 'undefined') { attachWidget(); }
   else { window.addEventListener('load', attachWidget); }
 })();
@@ -140,24 +159,21 @@
   });
 })();
 
-// ============================================================
-//  ACCORDION — JS-driven height animation
-//  Mobile  (≤768px): tap to open/close, one section at a time
-//  Desktop (>768px): Rolodex — auto-opens as you scroll down,
-//                   closes the previous one (one card visible)
-// ============================================================
+// ---- ACCORDION ---- //
 (function () {
   const MOBILE_MQ = window.matchMedia('(max-width: 768px)');
   const cards     = Array.from(document.querySelectorAll('.section-card'));
   const tabs      = Array.from(document.querySelectorAll('.acc-tab'));
 
-  // ---- Core open / close ---- //
   function expandCard(card) {
     const body = card.querySelector('.acc-body');
     if (!body || card.classList.contains('open')) return;
     card.classList.add('open');
     const tab = card.querySelector('.acc-tab');
     if (tab) tab.setAttribute('aria-expanded', 'true');
+    // Fire all reveals inside immediately — avoids IntersectionObserver
+    // triggering mid-scroll which causes image scatter on mobile
+    card.querySelectorAll('.reveal').forEach(el => el.classList.add('in'));
     body.style.height = body.scrollHeight + 'px';
     body.addEventListener('transitionend', function onEnd() {
       if (card.classList.contains('open')) body.style.height = 'auto';
@@ -168,7 +184,6 @@
   function collapseCard(card) {
     const body = card.querySelector('.acc-body');
     if (!body || !card.classList.contains('open')) return;
-    // Pin to current height, then animate to 0
     body.style.height = body.getBoundingClientRect().height + 'px';
     requestAnimationFrame(() => requestAnimationFrame(() => { body.style.height = '0'; }));
     card.classList.remove('open');
@@ -181,7 +196,6 @@
     expandCard(card);
   }
 
-  // ---- Tab click — always available as manual override ---- //
   tabs.forEach(tab => {
     tab.addEventListener('click', () => {
       const card = tab.closest('.section-card');
@@ -189,17 +203,14 @@
       if (card.classList.contains('open')) {
         collapseCard(card);
       } else {
+        openExclusive(card);
         if (MOBILE_MQ.matches) {
-          openExclusive(card);
           setTimeout(() => tab.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
-        } else {
-          openExclusive(card);
         }
       }
     });
   });
 
-  // ---- Nav links (mobile): open matching card ---- //
   document.querySelectorAll('.nm-link').forEach(link => {
     link.addEventListener('click', () => {
       if (!MOBILE_MQ.matches) return;
@@ -210,31 +221,6 @@
       }
     });
   });
-
-  // Desktop and mobile: all cards closed by default, click to open/close
-
-})();
-
-// ---- SOUNDCLOUD MOBILE FIX ---- //
-// iOS Safari blocks Widget API audio control through iframes.
-// On mobile, the soundbar play button opens SoundCloud directly instead.
-(function () {
-  const MOBILE_MQ = window.matchMedia('(max-width: 768px)');
-  const playBtn   = document.getElementById('sbPlayBtn');
-  if (!playBtn || !MOBILE_MQ.matches) return;
-
-  // Replace play button behaviour with direct SC link on mobile
-  playBtn.addEventListener('click', (e) => {
-    if (!MOBILE_MQ.matches) return;
-    e.stopPropagation();
-    window.open('https://soundcloud.com/chrisdilorenzo', '_blank', 'noopener,noreferrer');
-  }, true);
-
-  // Update label to hint at this
-  const trackLbl = document.getElementById('sbTrack');
-  if (trackLbl && MOBILE_MQ.matches) {
-    trackLbl.textContent = 'Tap ▶ to open SoundCloud';
-  }
 })();
 
 // ---- IMAGE FALLBACK ---- //

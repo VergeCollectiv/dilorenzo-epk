@@ -46,7 +46,6 @@ html {
   overscroll-behavior-y: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  scroll-snap-type: y proximity;
 }
 body {
   font-family: var(--body);
@@ -96,14 +95,10 @@ button { background:none; border:none; cursor:pointer; color:inherit; }
   margin-top: 10px;
   position: relative;
   scroll-margin-top: 0;
-  scroll-snap-align: start;
   opacity: 0;
   transition: opacity .5s var(--ease-out);
 }
 .section-card.card-in { opacity: 1; }
-
-/* Hero also gets a snap point */
-.hero { scroll-snap-align: start; }
 
 .about-sec     { z-index: 2; }
 .the-sound-sec { z-index: 3; }
@@ -422,20 +417,47 @@ nav#nav.open .nav-mobile { display:flex; }
 .yt-poster:hover .yt-play { transform:scale(1.08); background:rgba(255,255,255,.2); }
 .yt-cta { font-size:12px; font-weight:500; letter-spacing:.18em; text-transform:uppercase; color:rgba(255,255,255,.8); }
 
-.watch-more {
-  display: inline-block;
-  margin-top: 16px;
-  font-size: 13px;
-  font-weight: 500;
-  letter-spacing: .08em;
-  color: var(--green);
-  transition: opacity .2s;
-}
-.watch-more:hover { opacity:.7; }
-
 /* SoundCloud */
 .sc-wrap { border-radius:var(--r-lg); overflow:hidden; background:rgba(18,14,8,.35); }
 .sc-wrap iframe { display:block; }
+
+/* SC card link in Sound section */
+.sc-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 22px;
+  background: rgba(250,248,245,.05);
+  border: 1px solid rgba(250,248,245,.1);
+  border-radius: var(--r-lg);
+  text-decoration: none;
+  color: var(--white);
+  transition: background .2s, border-color .2s;
+}
+.sc-card:hover { background:rgba(250,248,245,.1); border-color:rgba(250,248,245,.22); }
+.sc-card-icon { flex-shrink:0; color:rgba(255,81,0,.85); display:flex; align-items:center; }
+.sc-card-text { display:flex; flex-direction:column; gap:4px; flex:1; min-width:0; }
+.sc-card-name { font-weight:700; font-size:clamp(14px,1.5vw,16px); letter-spacing:.04em; color:var(--white); }
+.sc-card-sub  { font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
+.sc-card-arrow { font-size:18px; color:var(--muted); flex-shrink:0; transition:transform .2s, color .2s; }
+.sc-card:hover .sc-card-arrow { color:var(--white); transform:translate(3px,-3px); }
+
+/* Verge mobile logo strip in community section */
+.verge-mob-link {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  margin-top: clamp(20px,3vw,28px);
+  padding-top: clamp(16px,2.5vw,22px);
+  border-top: 1px solid rgba(18,14,8,.1);
+  text-decoration: none;
+  color: var(--ink);
+  opacity: .6;
+  transition: opacity .2s;
+}
+.verge-mob-link:hover { opacity: 1; }
+.verge-mob-logo { height: 28px; width: auto; display: block; }
+.verge-mob-arrow { font-size: 14px; color: rgba(18,14,8,.4); }
 
 /* ---- COMMUNITY ---- */
 .community-sec {
@@ -738,6 +760,21 @@ nav#nav.open .nav-mobile { display:flex; }
   white-space: nowrap;
 }
 .sb-sc-link:hover { color:var(--white); }
+.sb-sc-fallback {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--white);
+  background: rgba(255,255,255,.14);
+  border: 1px solid rgba(255,255,255,.25);
+  border-radius: 100px;
+  padding: 7px 14px;
+  white-space: nowrap;
+  transition: background .2s;
+  align-items: center;
+}
+.sb-sc-fallback:hover { background:rgba(255,255,255,.24); }
 
 /* ---- ACCORDION SYSTEM (desktop + mobile) ---- */
 
@@ -814,20 +851,19 @@ nav#nav.open .nav-mobile { display:flex; }
   .nav-toggle { display:flex; }
   .form-row { grid-template-columns:1fr; }
   .verge-stats { gap:20px; flex-wrap:wrap; }
-  .sb-sc-link { display:none; }
   /* Ticker: hide label on mobile so venues get full width */
   .ticker-label { display:none; }
-  /* Gallery: 2 square columns on mobile */
+  /* Gallery: consistent 2-col, 4/3 ratio, hide 3rd photo — same above and below ticker */
   .gallery-row { grid-template-columns:1fr 1fr; }
-  .gallery-row .gp-item { aspect-ratio:1/1; }
+  .gallery-row .gp-item { aspect-ratio:4/3; }
   .gallery-row .gp-item:last-child { display:none; }
   /* Community: stack on small screens */
   .community-grid { grid-template-columns:1fr; }
 }
 
-@media (max-width: 480px) {
-  .gallery-row .gp-item:last-child { display:block; }
-  .gallery-row .gp-item { aspect-ratio:4/3; }
+/* Show Verge logo link in comm-text on tablet/mobile */
+@media (max-width: 960px) {
+  .verge-mob-link { display:flex; }
 }
 
 /* ============================================================

@@ -27,8 +27,8 @@ The EPK needs to work well on mobile where a long scrolling page is frustrating.
 ### Why JS-driven height animation instead of CSS `grid-template-rows: 0fr`?
 CSS grid animation for height is not reliably supported across all browsers and older iOS Safari versions. The JS approach (`element.scrollHeight` → `auto`, and `getBoundingClientRect().height` → `0`) works on every device. It also allows `height: auto` after opening, so the section can grow if content changes.
 
-### Why `scroll-snap-type: y proximity` on the page?
-This gives a subtle "magnetic" feel when scrolling — sections pull into view as you approach them, without being aggressive. `mandatory` would force you to stop at every section even when scrolling fast, which is annoying. `proximity` only snaps when you're already close.
+### Why scroll-snap was removed
+Scroll-snap (`scroll-snap-type: y proximity`) was initially added for a "magnetic" feel. It was removed because it fights badly with the accordion on mobile: when a card opens and the page height changes dramatically, the snap algorithm recalculates and force-jumps the viewport, which also triggers the IntersectionObserver mid-animation — causing images to visually scatter. The accordion already handles smooth navigation; snap adds no benefit and multiple bugs on mobile.
 
 ### Why `mailto:` for the booking form?
 This is a static site — there is no server to handle form submissions. Alternatives like Netlify Forms or Formspree require account setup and can add delay. `mailto:` opens the user's email client pre-filled with the form data. It works everywhere, requires no maintenance, and every reply lands directly in the DJ's inbox.
@@ -227,7 +227,7 @@ Every section card has this structure:
 
 **Exclusive behavior:** Opening any card closes all others. This is intentional — only one section is readable at a time, which prevents the page from becoming a wall of text.
 
-**Scroll snap:** `scroll-snap-type: y proximity` on `html` means sections gently pull into view as you scroll close to them. `proximity` mode does not snap aggressively — it only helps if you're already near a snap point.
+**Why no scroll-snap:** scroll-snap was removed because on mobile it fights the accordion's height animation — when a card opens, snap recalculates and jumps the viewport, which also triggers IntersectionObserver on mid-animation reveals causing images to scatter. See the why section above.
 
 ---
 
@@ -357,8 +357,8 @@ git push
 - The SC API script (`<script async src="...api.js">`) must be `async` not `defer`. `defer` waits until after HTML parsing — by then `main.js` has already run and `typeof SC` is undefined.
 - All widget event bindings must be inside the `READY` callback. Binding events before READY results in silent failures.
 
-**SoundCloud on iPhone plays nothing**
-- iOS Safari blocks cross-origin iframe audio control via the Widget API. The soundbar play button detects mobile and opens SoundCloud directly via `window.open()` instead. This is correct behavior, not a bug.
+**SoundCloud on iPhone plays nothing / play button seems to do nothing**
+- iOS Safari blocks cross-origin iframe audio control without a direct user tap on the iframe itself. The fix: when the play button is pressed, `widget.play()` is called optimistically. If no PLAY event fires within 800ms, `#sbScFallback` appears — a pill button in the soundbar that opens SoundCloud directly. The soundbar still shows on iOS; it just falls back to a link if the Widget API is blocked. This is correct behavior, not a bug.
 
 **Section does not collapse / accordion stuck open**
 - The `transitionend` event on `.acc-body` must fire cleanly. If you add `transition: none` in a media query without the `prefers-reduced-motion` wrapper, the event won't fire and height will stay at the pixel value instead of switching to `auto`.
@@ -371,7 +371,11 @@ git push
 - The `.ticker-label` is hidden at ≤700px via `display: none`. If it's showing, check that the mobile media query is present in `style.css`.
 
 **Community section looks bad on mobile / verge-col visible on mobile**
-- `.verge-col` is hidden at ≤960px via `display: none`. On tablet, community shows as 2-col (text + photos). On mobile it stacks to 1 col. This is intentional — the verge column is not necessary on small screens since the text already explains the affiliation.
+- `.verge-col` (the large clickable logo card) is hidden at ≤960px via `display: none`. On tablet, community shows as 2-col (text + photos). On mobile it stacks to 1 col.
+- On mobile, the Verge logo is shown via `.verge-mob-link` — a small inline logo + arrow inside `.comm-text`. This appears below the stats block only at ≤960px. It's a separate element from `.verge-col`; both can't be visible at the same time.
+
+**Gallery looks different above vs. below the ticker on mobile**
+- Both gallery rows use the same CSS class `.gallery-row`. On mobile (≤700px): `grid-template-columns: 1fr 1fr`, `aspect-ratio: 4/3`, and `.gp-item:last-child { display: none }`. This hides the 3rd photo and shows 2 side-by-side at the same ratio in both rows — identical above and below the ticker. Do not add a breakpoint that overrides this for smaller screens (e.g. a 480px rule showing 3 items) — that breaks the congruence.
 
 **Images not loading after deploy**
 - All image paths are case-sensitive on Netlify (Linux server) but not on Mac (case-insensitive). If you name a file `Hero-BG.jpg` and reference it as `hero-bg.jpg` it works on your Mac but 404s on Netlify. Always use lowercase filenames.
@@ -395,3 +399,9 @@ git push
 | 2026-06-19 | Section order: About → Sound → Gallery → Community → Book (on all screen sizes) |
 | 2026-06-19 | Git initialized, pushed to VergeCollectiv/dilorenzo-epk, deployed at vergecollectiv.com/dilorenzo |
 | 2026-06-19 | SC API script marked async; duplicate CSS hero-content merged; unused .vs-city removed |
+| 2026-06-19 | Removed scroll-snap (fought accordion height animation on mobile, causing image scatter) |
+| 2026-06-19 | SC section: replaced busy iframe embed with clean .sc-card link; hidden iframe moved off-screen for Widget API |
+| 2026-06-19 | iOS SC fallback: #sbScFallback pill appears in soundbar if Widget API play blocked after 800ms |
+| 2026-06-19 | Gallery mobile: consistent 2-col 4/3 above+below ticker; removed 480px override that broke congruence |
+| 2026-06-19 | Community: .verge-mob-link (inline logo + arrow) added inside comm-text, visible at ≤960px only |
+| 2026-06-19 | YouTube cover photo updated to verge-highlight-1.jpg; .watch-more link + CSS removed |
