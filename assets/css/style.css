@@ -525,20 +525,22 @@ nav#nav.open .nav-mobile { display:flex; }
 }
 .vstat-l { font-size:9px; letter-spacing:.3em; text-transform:uppercase; color:rgba(18,14,8,.42); }
 
-/* Community right column — photos stretch to exact height of text column */
-.comm-visual { display:flex; flex-direction:column; height:100%; }
+/* Community right column — photos fill exact text column height.
+   min-height:0 at every level suppresses image intrinsic size so the TEXT column
+   drives the row height, not the images. align-items:stretch then stretches photos to match. */
+.comm-visual { display:flex; flex-direction:column; min-height:0; }
 .comm-photos {
-  flex: 1;           /* fill remaining height of .comm-visual */
-  min-height: 0;     /* allow shrinking inside flex */
+  flex: 1;
+  min-height: 0;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr 1fr;   /* 2 equal rows that fill available height */
+  grid-template-rows: 1fr 1fr;
   gap: 5px;
   border-radius: var(--r);
   overflow: hidden;
 }
-.cp-item { min-height: 0; overflow: hidden; } /* no aspect-ratio — height driven by grid rows */
-.cp-item img { width:100%; height:100%; object-fit:cover; transition:transform .5s var(--ease); }
+.cp-item { min-height:0; overflow:hidden; }
+.cp-item img { width:100%; height:100%; object-fit:cover; display:block; transition:transform .5s var(--ease); }
 .cp-item:hover img { transform:scale(1.06); }
 
 /* Brutalist pill / tag sharpening */
