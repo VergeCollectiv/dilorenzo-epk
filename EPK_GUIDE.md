@@ -1,236 +1,397 @@
-# DJ EPK — Build Guide
-*Last updated: 2026-06-19 · Based on DILORENZO build*
+# DJ EPK — Build & Deploy Guide
+*Template: DILORENZO · Last updated: 2026-06-19*
 
-This guide is the single reference for adapting this EPK template to a new DJ. Work through each section top to bottom. Every field that needs changing is marked `← CHANGE`.
-
----
-
-## Quick Start
-
-1. Duplicate this entire folder and rename it `[djname]-epk/`
-2. Follow the sections below in order
-3. Compress all photos before adding them (see Image Rules)
-4. Open `index.html` in a browser and verify every section
+This document is a complete reference for building, customizing, and deploying a DJ Electronic Press Kit (EPK) using this template. It is written to be handed to Claude Code with enough context to recreate or adapt the entire project from scratch — including deployment to GitHub and Netlify.
 
 ---
 
-## 1. Identity
+## What This Is
 
-Open `index.html` and find/replace:
+A single-page DJ press kit that lives at a URL like `vergecollectiv.com/dilorenzo` or as its own standalone site. It is a pure static site — HTML, CSS, and vanilla JavaScript. No frameworks, no build step, no dependencies to install. This is intentional: static sites load fast on bad internet connections, deploy in seconds, and require no server to maintain.
+
+**Sections (in order):**
+Hero → About → Sound → Gallery → Community → Book
+
+---
+
+## Why These Technical Decisions Were Made
+
+Understanding the reasoning prevents you from accidentally breaking things while customizing.
+
+### Why vanilla JS with no framework?
+This is a public-facing page that needs to load fast on mobile, potentially on slow connections. React, Vue, etc. add hundreds of KB of JS. This entire site's JS is under 10KB. Every section loads immediately. No hydration, no bundle, no build step to manage.
+
+### Why accordion folders instead of scroll sections?
+The EPK needs to work well on mobile where a long scrolling page is frustrating. Accordion sections let the viewer jump directly to what they care about (bio, gallery, booking form) without scrolling past everything else. The folder metaphor also gives it a visual identity — it feels like opening a file, which matches the "press kit" concept.
+
+### Why JS-driven height animation instead of CSS `grid-template-rows: 0fr`?
+CSS grid animation for height is not reliably supported across all browsers and older iOS Safari versions. The JS approach (`element.scrollHeight` → `auto`, and `getBoundingClientRect().height` → `0`) works on every device. It also allows `height: auto` after opening, so the section can grow if content changes.
+
+### Why `scroll-snap-type: y proximity` on the page?
+This gives a subtle "magnetic" feel when scrolling — sections pull into view as you approach them, without being aggressive. `mandatory` would force you to stop at every section even when scrolling fast, which is annoying. `proximity` only snaps when you're already close.
+
+### Why `mailto:` for the booking form?
+This is a static site — there is no server to handle form submissions. Alternatives like Netlify Forms or Formspree require account setup and can add delay. `mailto:` opens the user's email client pre-filled with the form data. It works everywhere, requires no maintenance, and every reply lands directly in the DJ's inbox.
+
+### Why SoundCloud Widget API instead of a custom audio player?
+The SoundCloud library is already the authoritative source of the DJ's music. Building a custom player would require hosting audio files (large, expensive) and managing playback state manually. The Widget API lets us skin the controls however we want while SoundCloud handles the CDN, streaming, and track catalog automatically.
+
+### Why is the SoundCloud iframe NOT lazy-loaded?
+The Widget API needs to attach to the iframe via `SC.Widget(iframe)`. If the iframe has `loading="lazy"`, its `src` is never fetched until it scrolls into view — but the Widget API is initialized on page load. The two would desync. The iframe must load immediately even though it's below the fold. (Other images use `loading="lazy"` because they don't need JS to talk to them.)
+
+### Why `async` on the SoundCloud API script?
+The SC API script (`w.soundcloud.com/player/api.js`) is third-party. Without `async`, it blocks the browser from parsing the rest of the HTML until it downloads. With `async`, the browser continues loading the page while the script downloads in parallel. The widget code in `main.js` handles both cases: if SC loads first, `typeof SC !== 'undefined'` catches it; if SC loads second, a `load` event fallback calls `attachWidget()` once ready.
+
+### Why the SoundCloud widget URL uses `/tracks`?
+`soundcloud.com/[username]` loads the full stream including reposts and liked tracks. `soundcloud.com/[username]/tracks` loads only the artist's own uploaded tracks, ordered newest first. This ensures the soundbar always starts on the artist's most recent original track, not a repost of someone else's music.
+
+### Why READY event before other widget event bindings?
+The SoundCloud Widget API requires the widget to be fully initialized before you can attach event listeners like PLAY, PAUSE, or PROGRESS. Binding events before READY results in silent failures — the widget loads but nothing works. Wrapping all bindings inside the READY callback guarantees the widget is ready to receive them.
+
+---
+
+## File Structure
+
+```
+[djname]-epk/
+├── index.html          ← The entire EPK — one file, all sections
+├── netlify.toml        ← Security headers for Netlify (do not delete)
+├── .gitignore          ← Excludes .DS_Store and system files from git
+├── EPK_GUIDE.md        ← This file
+└── assets/
+    ├── css/
+    │   └── style.css   ← All styles — brand tokens, layout, animations
+    ├── js/
+    │   └── main.js     ← All interactivity — accordion, soundbar, reveals
+    ├── fonts/
+    │   ├── Inter-VariableFont_opsz,wght.ttf
+    │   └── Inter-Italic-VariableFont_opsz,wght.ttf
+    └── images/
+        ├── hero-bg.jpg         ← Full-bleed hero background (compress at 2200px)
+        ├── sound-portrait.jpg  ← Portrait photo for About section (3:4 ratio)
+        ├── connect-portrait.jpg ← Portrait photo for Book section (3:4 ratio)
+        ├── watch-poster.jpg    ← YouTube video thumbnail / poster
+        ├── gallery-1.jpg – gallery-6.jpg ← Event photos for gallery grid
+        ├── dj-crowd-01.jpg     ← Community grid photo 1
+        ├── verge-highlight-1.jpg ← Community grid photo 2
+        ├── verge-highlight-3.jpg ← Community grid photo 3
+        ├── biblio-02.jpg       ← Community grid photo 4
+        └── verge-logo.png      ← Brand/collective logo for community section
+```
+
+---
+
+## Brand Tokens
+
+These CSS variables are declared in `:root` in `style.css`. Change them here and the entire site updates.
+
+```css
+:root {
+  --ink:     #120E08;   /* near-black — body bg, dark section text */
+  --ink-2:   #1C1610;   /* warm dark — subtle variant */
+  --ink-3:   #2A2018;   /* medium dark */
+  --paper:   #EDE5D4;   /* warm parchment — light section bg */
+  --paper-2: #D4C9B4;   /* darker parchment — card fills */
+  --green:   #3A7E70;   /* accent — soundbar, links, focus rings. CHANGE PER DJ. */
+  --white:   #FAF8F5;   /* off-white — text on dark backgrounds */
+  --muted:   rgba(250,248,245,.42);
+  --mid:     rgba(250,248,245,.68);
+
+  --pad:  clamp(24px,6vw,80px);  /* horizontal page padding, responsive */
+  --mw:   1280px;                /* max content width */
+  --r:    6px;                   /* border-radius — brutalist/sharp */
+  --r-lg: 10px;                  /* large border-radius */
+}
+```
+
+**Section background colors (each folder gets a distinct color):**
+```css
+.about-sec     { background: #EDE5D4; }  /* warm cream */
+.the-sound-sec { background: #120E08; }  /* near black */
+.gallery-sec   { background: #0D1C19; }  /* dark forest green */
+.community-sec { background: #D5CCB8; }  /* medium tan */
+.connect-sec   { background: #1E1410; }  /* espresso */
+```
+
+**Accent color** (`--green`) is used for:
+- Soundbar background
+- Nav "Book" button hover
+- Gallery ticker label
+- Form input focus ring
+- SoundCloud widget color (also set in the iframe src: `color=%23[hex without #]`)
+
+When changing the accent, update **both** the CSS variable and the `color=` parameter in the SoundCloud iframe URL.
+
+---
+
+## Customizing for a Different DJ
+
+Work through these in order:
+
+### 1. Identity swap — open `index.html` and replace:
 
 | Find | Replace with |
 |---|---|
-| `DILORENZO` | DJ name (uppercase) |
-| `DJ AND EVENT CURATOR` | DJ's subtitle / role |
+| `DILORENZO` | DJ name (all caps) |
+| `DJ AND EVENT CURATOR` | DJ's title/role |
 | `Toronto, ON` | DJ's city |
 | `cdilorenzomusic@gmail.com` | DJ's email |
 | `instagram.com/cdilorenzomusic` | DJ's Instagram |
 | `soundcloud.com/chrisdilorenzo` | DJ's SoundCloud |
+| `tiktok.com/@cdilorenzomusic` | DJ's TikTok |
 | `youtube.com/@cdilorenzomusic` | DJ's YouTube |
 | `© 2026 DILORENZO` | Year + DJ name |
 
-In `style.css`, update `--green` to the DJ's accent colour:
-```css
---green: #3A7E70;   /* ← CHANGE to DJ's accent hex */
+### 2. SoundCloud widget URL — in the `<iframe id="sc-player">` src:
 ```
+soundcloud.com/[USERNAME]/tracks
+```
+This loads the DJ's own tracks, newest first. Also update `color=%23[hex]` to match your accent color (URL-encoded hex — replace `#` with `%23`).
+
+### 3. YouTube — find and replace both YouTube URLs in the Sound section:
+```html
+href="https://youtu.be/[VIDEO-ID]"              <!-- poster click -->
+href="https://youtube.com/@[CHANNEL-HANDLE]"    <!-- More on YouTube link -->
+```
+
+### 4. Accent color — in `style.css`:
+```css
+--green: #XXXXXX;  /* change to DJ's brand color */
+```
+And in the SoundCloud iframe src: `color=%23XXXXXX` (no # symbol, use %23).
+
+### 5. About bio — find the three `<p class="sound-body">` paragraphs in `#about` and replace the text.
+
+### 6. Genre tags — update the three `.stag` pills:
+```html
+<span class="stag">Genre 1</span>
+<span class="stag">Genre 2</span>
+<span class="stag">BPM Range</span>
+```
+
+### 7. Gallery ticker venues — update the `<span>` list inside `.gt-track`. The list must appear **twice** (two copies of the same venues) for the seamless marquee loop. One copy is not enough — the animation would show a gap at the end.
+
+### 8. Community section — if the DJ has no collective/brand, add `display: none` to `#community` in CSS. If they do, update the heading, body text, stats, logo, and community photos.
 
 ---
 
-## 2. Photos
+## Image Specs
 
-### Required photos (replace files in `assets/images/`)
+Compress all photos before adding them. Large images are the single biggest cause of slow page loads on mobile.
 
-| File | Section | Notes |
-|---|---|---|
-| `hero-bg.jpg` | Hero | Full-bleed background. Compress at **2200px** for sharpness. Portrait or landscape. |
-| `sound-portrait.jpg` | About | Portrait of DJ (3:4 ratio). Studio or editorial shot. |
-| `connect-portrait.jpg` | Book | Second portrait, different from above. |
-| `watch-poster.jpg` | The Sound | Background image behind the YouTube play button. Event or atmosphere shot. |
-| `gallery-1.jpg` – `gallery-6.jpg` | Gallery | 6 event photos. Mix of DJ booth, crowd, and atmosphere. |
-| `gallery-[7+].jpg` | Gallery | Optional extras — update HTML and grid accordingly. |
-
-### Community section photos (4 photos in a 2×2 grid)
-
-Replace in `index.html` inside `#community .comm-photos`:
-```html
-<div class="cp-item"><img src="assets/images/[photo-1].jpg" ...></div>
-<!-- 4 total -->
-```
-
-### Compress command (Mac)
+**Compression command (Mac Terminal):**
 ```bash
+# Standard photos — 1400px max, quality 82
 sips -Z 1400 -s formatOptions 82 INPUT.jpg --out OUTPUT.jpg
-# For hero use -Z 2200 -s formatOptions 88
+
+# Hero image — larger for sharpness, 2200px max, quality 88
+sips -Z 2200 -s formatOptions 88 INPUT.jpg --out OUTPUT.jpg
 ```
 
----
+**Target file sizes:**
+- Hero: under 600KB
+- Gallery photos: under 300KB each
+- Portrait photos: under 250KB
 
-## 3. Hero object-position
-
-Control which part of the hero photo is visible on landscape screens:
-
-In `style.css`:
+**Hero image framing** — controlled by `object-position` in CSS:
 ```css
-.hero-photo img { object-position: center 28%; }
+.hero-photo img { object-position: center 12%; }
 ```
-
-- `center top` — shows the very top (heads/faces)
-- `center 25%` — good for head + torso shots
-- `center 42%` — centres vertically
-- `center 65%` — shows lower body / gear
-
-Test in browser and adjust until framing looks right.
+- Lower % (toward 0%) = shows more of the top of the image (head/face)
+- Higher % (toward 100%) = shows more of the bottom (gear/crowd)
+- Adjust until the subject's face and shoulders are clearly visible on desktop
 
 ---
 
-## 4. About section (bio)
+## How the Accordion Works
 
-In `index.html`, section `#about`:
+Every section card has this structure:
 
-- Replace the three `<p class="sound-body">` paragraphs with the DJ's biography
-- Update the `.stag` pills (genre tags + BPM range):
 ```html
-<span class="stag">← Genre</span>
-<span class="stag">← Genre</span>
-<span class="stag">← BPM Range</span>
+<section id="about" class="about-sec section-card">
+  <button class="acc-tab" aria-expanded="false">
+    <span class="acc-title">About</span>
+    <span class="acc-plus">+</span>
+  </button>
+  <div class="acc-body">          ← height: 0 by default (hidden)
+    <div class="acc-inner">       ← actual content lives here
+      <!-- section content -->
+    </div>
+  </div>
+</section>
 ```
 
+**To open:** JS sets `acc-body` height to `scrollHeight` (measured content height) → CSS transitions it → `transitionend` sets it to `auto` so it can grow freely.
+
+**To close:** JS pins height to `getBoundingClientRect().height` first (necessary — you can't animate away from `auto`), then double `requestAnimationFrame` to let the browser register the fixed height, then sets it to `0`.
+
+**Exclusive behavior:** Opening any card closes all others. This is intentional — only one section is readable at a time, which prevents the page from becoming a wall of text.
+
+**Scroll snap:** `scroll-snap-type: y proximity` on `html` means sections gently pull into view as you scroll close to them. `proximity` mode does not snap aggressively — it only helps if you're already near a snap point.
+
 ---
 
-## 5. Gallery section
+## Deploying to GitHub + Netlify
 
-**Photos** — replace `gallery-1.jpg` through `gallery-6.jpg` (see section 2).
+This section explains every step and why each one matters.
 
-**Venue ticker** — update the venue list in `#gallery .gt-track`. The list must be duplicated (two copies) for the seamless marquee loop:
-```html
-<span>Venue Name</span><span class="vs-dot">·</span><span class="vs-city">City, Province</span><span class="vs-dot">·</span>
-<!-- ... repeat for all venues, then copy the whole list again -->
+### Why GitHub + Netlify instead of just Netlify Drop?
+
+Netlify Drop (drag and drop) works for one-time deploys but means every update requires a manual upload. GitHub + Netlify gives you **continuous deployment**: every time you push a change to GitHub, Netlify automatically rebuilds and re-deploys. This is the professional workflow and takes about 5 extra minutes to set up the first time.
+
+### Step 1: Initialize Git
+
+Git is version control — it tracks every change to your files and lets you push them to GitHub. Open Terminal and run:
+
+```bash
+# Navigate to the EPK folder
+cd /path/to/your/[djname]-epk
+
+# Initialize git in this folder
+git init
+
+# Set the main branch name (GitHub expects "main")
+git branch -M main
+
+# Create a .gitignore to exclude Mac system files
+echo ".DS_Store" > .gitignore
+echo "*.log" >> .gitignore
 ```
 
----
+**Why `.gitignore`?** Mac creates hidden `.DS_Store` files in every folder. Without ignoring them, they'd show up in GitHub and create noisy commits every time you view the folder in Finder.
 
-## 6. The Sound section (video + audio)
+### Step 2: Stage and commit all files
 
-**YouTube link** — find and replace the two YouTube URLs:
-```html
-href="https://youtu.be/[VIDEO-ID]"          <!-- poster link -->
-href="https://youtube.com/@[CHANNEL-HANDLE]" <!-- "More on YouTube" link -->
+```bash
+# Stage everything
+git add .
+
+# Create the first commit
+git commit -m "Initial commit — [DJ NAME] EPK"
 ```
 
-Note: YouTube embedding is often disabled by artists. This section uses a poster image + external link instead of an iframe, which always works.
+**Why commit first?** Git requires at least one commit before you can push to GitHub. Think of a commit as a save point. GitHub only accepts folders that have at least one save point.
 
-**SoundCloud** — update the `src` URL in the `<iframe id="sc-player">`:
-```
-https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/[USERNAME]&...
-```
+### Step 3: Create a GitHub repository
 
-The soundbar at the bottom auto-connects to this iframe via the SoundCloud Widget API.
+1. Go to [github.com](https://github.com) and log in
+2. Click the **+** button → **New repository**
+3. Name it `[djname]-epk` (e.g. `dilorenzo-epk`)
+4. Set to **Public** (Netlify's free tier requires public repos, or you need a paid Netlify plan for private)
+5. **Do NOT** check "Add README", "Add .gitignore", or "Choose a license" — your repo already has these and adding them here would create a conflict
+6. Click **Create repository**
 
----
+GitHub will show a page with commands under **"…or push an existing repository from the command line"**. Use those exact commands (they contain your account/repo name).
 
-## 7. Community section
+### Step 4: Connect your local repo to GitHub
 
-This section is for a collective / brand the DJ is part of. If the DJ has no brand affiliation, hide this section by adding `display:none` to `#community` in the CSS, or delete the HTML block.
+```bash
+# Link local repo to GitHub (copy from the GitHub page — the URL will have your username)
+git remote add origin https://github.com/YOUR-USERNAME/dilorenzo-epk.git
 
-**To customize:**
-- Update the `<h2>Community</h2>` text to the brand name or section concept
-- Update `comm-body` paragraph with the brand description
-- Update stats (`.vstat-n` and `.vstat-l`):
-```html
-<span class="vstat-n" data-target="15" data-suffix="+">15+</span>
-<span class="vstat-l">Events produced</span>
-```
-Remove `data-target` / `data-suffix` if no count-up animation is needed.
-- Update the Verge logo: replace `assets/images/verge-logo.png` with the brand's dark logo
-- Update the Verge link: `href="https://vergecollectiv.com"`
-- Replace the 4 community photos (see section 2)
-
----
-
-## 8. Book section
-
-**Form action** — the form opens the system mail client:
-```html
-<form action="mailto:[EMAIL]" ...>
-```
-This is the most reliable approach for a static site. For a real form backend, swap this for a Netlify form or Formspree endpoint.
-
-**Portrait** — `connect-portrait.jpg` (see section 2).
-
----
-
-## 9. Accent colour system
-
-The accent colour (`--green`) is used for:
-- Nav "Book" button hover
-- Soundbar background
-- Scroll indicator line
-- City names in venue ticker
-- Verge logo hover arrow
-- Form input focus ring
-- Carousel dot active state (if carousel is used)
-- SoundCloud embed colour parameter in the iframe URL
-
-When changing the accent colour, update **both**:
-1. `--green` in `style.css`
-2. The `color=` parameter in the SoundCloud iframe `src` URL (hex, URL-encoded: `%23` instead of `#`)
-
----
-
-## 10. Deployment (Netlify)
-
-1. Go to [netlify.com/drop](https://app.netlify.com/drop)
-2. Drag the entire `[djname]-epk/` folder onto the page
-3. Netlify gives you a URL immediately (e.g. `random-name.netlify.app`)
-4. Optionally add a custom domain in Netlify settings
-
-To update: drag the folder again or push to a connected GitHub repo.
-
----
-
-## Section map
-
-| Section ID | Class | Background | Title colour |
-|---|---|---|---|
-| `#hero` | `.hero` | Dark (ink) image | White |
-| `#about` | `.about-sec` | Light (paper) | Ink/black |
-| `#gallery` | `.gallery-sec` | Dark (ink) | White |
-| `#the-sound` | `.the-sound-sec` | Dark (ink-2) | White |
-| `#community` | `.community-sec` | Light (paper) | Ink/black |
-| `#book` | `.connect-sec` | Dark (ink) | White |
-
----
-
-## Brand tokens (current: DILORENZO)
-
-```css
---ink:   #120E08   /* near-black */
---paper: #EDE5D4   /* warm parchment */
---green: #3A7E70   /* accent — CHANGE PER DJ */
---white: #FAF8F5   /* off-white text */
+# Push to GitHub
+git push -u origin main
 ```
 
+**If prompted for a password:** GitHub no longer accepts your account password here. You need a **Personal Access Token**:
+- GitHub → Settings (top right, your profile) → Developer Settings → Personal Access Tokens → Tokens (classic) → Generate new token
+- Check the `repo` scope
+- Copy the token and paste it as the password when Terminal asks
+
+**Why does this work?** `git remote add origin` tells your local git "the remote home for this code lives at this GitHub URL." `git push` sends all your committed files there. `-u origin main` sets it so future `git push` commands work without arguments.
+
+### Step 5: Deploy via Netlify
+
+1. Go to [app.netlify.com](https://app.netlify.com) and log in
+2. Click **"Add new site"** → **"Import an existing project"**
+3. Click **GitHub** and authorize Netlify to access your repos (one-time)
+4. Find and select your `[djname]-epk` repo
+5. Leave all settings as-is — the `netlify.toml` in the repo handles everything
+6. Click **"Deploy site"**
+
+Netlify builds and deploys in ~30 seconds. You'll get a URL like `random-words.netlify.app`.
+
+**To get a cleaner URL:** In Netlify → Site Settings → General → Site details → Change site name → set it to `dilorenzo-epk` → your URL becomes `dilorenzo-epk.netlify.app`.
+
+**To use a custom domain:** Site Settings → Domain management → Add a domain → follow the DNS instructions.
+
+### Step 6: Future updates
+
+Any time you change a file:
+
+```bash
+cd /path/to/[djname]-epk
+git add .
+git commit -m "Brief description of what changed"
+git push
+```
+
+Netlify detects the push automatically and re-deploys within ~30 seconds. No manual upload needed.
+
 ---
 
-## Change log
+## Hosting as a subfolder of an existing site
+
+If the DJ is affiliated with a collective that already has a Netlify site (e.g. `vergecollectiv.com`), the EPK can live at `vergecollectiv.com/dilorenzo` instead of its own URL. This is simpler to set up and removes the need for a separate Netlify site.
+
+**How:** Copy the entire EPK folder (without the `.git` folder inside it) into the collective's repo as a subfolder named `dilorenzo/`. All asset paths in the EPK are relative (e.g. `assets/css/style.css` not `/assets/css/style.css`), so they resolve correctly from the subfolder without any changes.
+
+```bash
+# From inside the collective's repo
+cp -r /path/to/dilorenzo-epk ./dilorenzo
+rm -rf ./dilorenzo/.git        # Remove nested git — only one git repo allowed
+rm ./dilorenzo/netlify.toml    # Remove nested Netlify config — only root one applies
+git add dilorenzo/
+git commit -m "Add DILORENZO EPK at /dilorenzo/"
+git push
+```
+
+**To remove it later:** `rm -rf dilorenzo/ && git add . && git commit -m "Remove DILORENZO EPK" && git push`. Done — nothing else on the site is affected.
+
+---
+
+## Troubleshooting
+
+**SoundCloud soundbar plays nothing / play button does nothing**
+- The `loading="lazy"` attribute must NOT be on the SC iframe. Lazy loading defers the iframe src from loading, which breaks the Widget API.
+- The SC API script (`<script async src="...api.js">`) must be `async` not `defer`. `defer` waits until after HTML parsing — by then `main.js` has already run and `typeof SC` is undefined.
+- All widget event bindings must be inside the `READY` callback. Binding events before READY results in silent failures.
+
+**SoundCloud on iPhone plays nothing**
+- iOS Safari blocks cross-origin iframe audio control via the Widget API. The soundbar play button detects mobile and opens SoundCloud directly via `window.open()` instead. This is correct behavior, not a bug.
+
+**Section does not collapse / accordion stuck open**
+- The `transitionend` event on `.acc-body` must fire cleanly. If you add `transition: none` in a media query without the `prefers-reduced-motion` wrapper, the event won't fire and height will stay at the pixel value instead of switching to `auto`.
+- Always include: `@media (prefers-reduced-motion: reduce) { .acc-body { transition: none !important; } }`
+
+**Hero image cuts off the subject's head on desktop**
+- Lower the `object-position` percentage: `center 12%` shows more of the top of the image. `center 0%` shows the very top. `center 50%` centers the image vertically. Adjust in small increments (4–5% at a time) and check at multiple window sizes.
+
+**Gallery ticker label takes up too much space on mobile**
+- The `.ticker-label` is hidden at ≤700px via `display: none`. If it's showing, check that the mobile media query is present in `style.css`.
+
+**Community section looks bad on mobile / verge-col visible on mobile**
+- `.verge-col` is hidden at ≤960px via `display: none`. On tablet, community shows as 2-col (text + photos). On mobile it stacks to 1 col. This is intentional — the verge column is not necessary on small screens since the text already explains the affiliation.
+
+**Images not loading after deploy**
+- All image paths are case-sensitive on Netlify (Linux server) but not on Mac (case-insensitive). If you name a file `Hero-BG.jpg` and reference it as `hero-bg.jpg` it works on your Mac but 404s on Netlify. Always use lowercase filenames.
+
+---
+
+## Change Log
 
 | Date | Change |
 |---|---|
 | 2026-06-19 | Initial build — DILORENZO EPK |
-| 2026-06-19 | Gallery grid (3×2 + venue ticker), The Sound two-column, Community redesign |
-| 2026-06-19 | Soundbar green, card stacking animation, hero re-compressed at 2200px |
-| 2026-06-19 | Accordion system: all sections collapsed by default, click to open (exclusive). JS height animation. |
-| 2026-06-19 | Removed diagonal clip-path; replaced with clean `border-radius: 16px 16px 0 0` + positive margin gap |
-| 2026-06-19 | Removed desktop Rolodex auto-open (IntersectionObserver). Click-only on both desktop + mobile. |
-| 2026-06-19 | Added CSS scroll-snap (`scroll-snap-type: y proximity` on html, `scroll-snap-align: start` per section) |
-| 2026-06-19 | Verge logo centered in community column (justify-content + align-items: center; arrow positioned absolute) |
-| 2026-06-19 | TikTok icon added to nav, hero, and Book section socials |
-| 2026-06-19 | Hero image object-position pushed down to `center 45%` (was 28%) |
-| 2026-06-19 | SoundCloud mobile fix: play button opens SC directly on iOS (Widget API blocked by Safari) |
-| 2026-06-19 | Section order changed: Hero → About → Sound → Gallery → Community → Book |
-| 2026-06-19 | Gallery ticker label hidden on mobile — venues get full width |
-| 2026-06-19 | Gallery mobile: 2-column square grid at ≤700px, full-width 4:3 at ≤480px |
-| 2026-06-19 | Community mobile: verge-col hidden ≤960px; text + photos 2-col at tablet, stacked at mobile |
-| 2026-06-19 | Hero image `object-position: center 12%` — ensures head is fully visible on desktop |
-| 2026-06-19 | CSS cleanup: merged duplicate `.hero-content`, removed unused `.vs-city` + `.gallery-header` |
-| 2026-06-19 | SC API script marked `async`; SC iframe gets `loading="lazy"` — no render blocking on slow connections |
+| 2026-06-19 | Gallery grid (3×2 + venue ticker), Sound two-column, Community 3-col with verge-col hover invert |
+| 2026-06-19 | Accordion system: all sections collapsed by default, JS height animation, exclusive open |
+| 2026-06-19 | Removed diagonal clip-path; clean card separations with positive margin gap + border-radius |
+| 2026-06-19 | Section colors: cream / black / dark teal / tan / espresso — visually distinct per folder |
+| 2026-06-19 | CSS scroll-snap (proximity mode) — subtle magnetic feel on scroll |
+| 2026-06-19 | TikTok icon added to nav, hero, and Book section |
+| 2026-06-19 | Hero image object-position center 12% — full head visible on desktop |
+| 2026-06-19 | SoundCloud: removed loading=lazy from iframe, added READY event, /tracks URL for newest track |
+| 2026-06-19 | About bio and Community copy updated to final text |
+| 2026-06-19 | Section order: About → Sound → Gallery → Community → Book (on all screen sizes) |
+| 2026-06-19 | Git initialized, pushed to VergeCollectiv/dilorenzo-epk, deployed at vergecollectiv.com/dilorenzo |
+| 2026-06-19 | SC API script marked async; duplicate CSS hero-content merged; unused .vs-city removed |

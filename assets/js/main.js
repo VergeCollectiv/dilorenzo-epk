@@ -88,31 +88,43 @@
   const progressFil = document.getElementById('sbProgress');
   if (!iframe || !soundbar) return;
 
-  function initWidget() {
-    if (typeof SC === 'undefined') return;
-    let playing = false;
-    let widget;
+  let playing = false;
+  let widget  = null;
+
+  function attachWidget() {
+    if (typeof SC === 'undefined' || widget) return;
     try {
       widget = SC.Widget(iframe);
-      widget.bind(SC.Widget.Events.PLAY,   () => { playing = true;  soundbar.classList.add('playing'); });
-      widget.bind(SC.Widget.Events.PAUSE,  () => { playing = false; soundbar.classList.remove('playing'); });
-      widget.bind(SC.Widget.Events.FINISH, () => { playing = false; soundbar.classList.remove('playing'); });
-      widget.bind(SC.Widget.Events.PLAY_PROGRESS, (e) => {
-        if (progressFil && e.relativePosition != null) {
-          progressFil.style.width = (e.relativePosition * 100) + '%';
-        }
+      // READY fires once the widget has loaded its first track
+      widget.bind(SC.Widget.Events.READY, () => {
+        // Show the most recent track title in the soundbar label
         widget.getCurrentSound(s => {
           if (s && trackLbl) trackLbl.textContent = s.title || 'DILORENZO on SoundCloud';
         });
+        widget.bind(SC.Widget.Events.PLAY, () => {
+          playing = true;
+          soundbar.classList.add('playing');
+          widget.getCurrentSound(s => {
+            if (s && trackLbl) trackLbl.textContent = s.title || 'DILORENZO on SoundCloud';
+          });
+        });
+        widget.bind(SC.Widget.Events.PAUSE,  () => { playing = false; soundbar.classList.remove('playing'); });
+        widget.bind(SC.Widget.Events.FINISH, () => { playing = false; soundbar.classList.remove('playing'); });
+        widget.bind(SC.Widget.Events.PLAY_PROGRESS, e => {
+          if (progressFil && e.relativePosition != null) {
+            progressFil.style.width = (e.relativePosition * 100) + '%';
+          }
+        });
+        if (playBtn) {
+          playBtn.addEventListener('click', () => { playing ? widget.pause() : widget.play(); });
+        }
       });
-      if (playBtn) {
-        playBtn.addEventListener('click', () => { playing ? widget.pause() : widget.play(); });
-      }
-    } catch (err) { /* Widget failed — soundbar stays idle */ }
+    } catch (err) { /* Widget unavailable — soundbar stays idle */ }
   }
 
-  if (typeof SC !== 'undefined') { initWidget(); }
-  else { window.addEventListener('load', initWidget); }
+  // SC API script is async — try immediately, fall back to load event
+  if (typeof SC !== 'undefined') { attachWidget(); }
+  else { window.addEventListener('load', attachWidget); }
 })();
 
 // ---- BOOKING FORM ---- //
