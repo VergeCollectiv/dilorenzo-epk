@@ -442,22 +442,6 @@ nav#nav.open .nav-mobile { display:flex; }
 .sc-card-arrow { font-size:18px; color:var(--muted); flex-shrink:0; transition:transform .2s, color .2s; }
 .sc-card:hover .sc-card-arrow { color:var(--white); transform:translate(3px,-3px); }
 
-/* Verge mobile logo strip in community section */
-.verge-mob-link {
-  display: none;
-  align-items: center;
-  gap: 10px;
-  margin-top: clamp(20px,3vw,28px);
-  padding-top: clamp(16px,2.5vw,22px);
-  border-top: 1px solid rgba(18,14,8,.1);
-  text-decoration: none;
-  color: var(--ink);
-  opacity: .6;
-  transition: opacity .2s;
-}
-.verge-mob-link:hover { opacity: 1; }
-.verge-mob-logo { height: 28px; width: auto; display: block; }
-.verge-mob-arrow { font-size: 14px; color: rgba(18,14,8,.4); }
 
 /* ---- COMMUNITY ---- */
 .community-sec {
@@ -467,53 +451,51 @@ nav#nav.open .nav-mobile { display:flex; }
 }
 .community-sec .wrap { max-width:var(--mw); margin:0 auto; padding: clamp(32px,5vh,56px) var(--pad) clamp(52px,8vh,80px); }
 
-.community-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: clamp(12px,1.8vw,24px);
-  align-items: stretch;
-}
-
-/* ---- Verge column — full-height clickable card, inverts on hover ---- */
-.verge-col {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  padding: clamp(24px,3vw,40px);
-  background: #C8BFA9;
-  border: 1px solid rgba(18,14,8,.12);
-  border-radius: var(--r);
-  text-decoration: none;
-  transition: background .4s var(--ease), border-color .4s;
-  min-height: clamp(240px,28vw,380px);
+/* Verge bar — full-width focal point above text/photos grid */
+.verge-bar {
+  display: block;
   position: relative;
   overflow: hidden;
-  gap: clamp(14px,2vw,20px);
+  height: clamp(80px,10vw,130px);
+  background: #C8BFA9;
+  border-bottom: 1px solid rgba(18,14,8,.1);
+  text-decoration: none;
 }
-.verge-col:hover {
-  background: var(--ink);
-  border-color: var(--ink);
-}
-.vc-logo {
-  width: clamp(100px,12vw,160px);
-  height: auto;
-  display: block;
-  transition: filter .4s var(--ease);
-}
-.verge-col:hover .vc-logo { filter: invert(1); }
-.vc-arrow {
+.vb-logo {
   position: absolute;
-  top: clamp(14px,1.8vw,20px);
-  right: clamp(14px,1.8vw,20px);
-  font-size: clamp(16px,2vw,22px);
-  color: rgba(18,14,8,.2);
-  transition: color .4s, transform .4s var(--ease);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 48%;
+  width: auto;
+  max-width: clamp(120px,22vw,280px);
+  object-fit: contain;
+  display: block;
+}
+.vb-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: clamp(10px,1.4vw,18px) clamp(14px,2vw,24px);
+  background: rgba(18,14,8,0);
+  transition: background .35s var(--ease);
+}
+.vb-arrow {
+  font-size: clamp(14px,1.6vw,20px);
+  color: rgba(18,14,8,0);
+  transition: color .35s var(--ease), transform .35s var(--ease);
   line-height: 1;
 }
-.verge-col:hover .vc-arrow {
-  color: rgba(250,248,245,.55);
-  transform: translate(4px, -4px);
+.verge-bar:hover .vb-overlay { background: rgba(18,14,8,.08); }
+.verge-bar:hover .vb-arrow   { color: rgba(18,14,8,.55); transform: translate(3px, -3px); }
+
+.community-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(24px,4vw,52px);
+  align-items: start;
 }
 
 .comm-h2 { /* inherits .sec-h2, color set by .community-sec .sec-h2 */ }
@@ -841,9 +823,6 @@ nav#nav.open .nav-mobile { display:flex; }
   .connect-grid { grid-template-columns:1fr; }
   .connect-portrait { position:static; max-width:340px; aspect-ratio:4/3; }
   .sound-av-grid { grid-template-columns:1fr; }
-  /* Community: hide verge-col, show text + photos side by side */
-  .community-grid { grid-template-columns:1fr 1fr; gap: clamp(12px,2vw,20px); }
-  .verge-col { display:none; }
 }
 
 @media (max-width: 700px) {
@@ -859,11 +838,6 @@ nav#nav.open .nav-mobile { display:flex; }
   .gallery-row .gp-item:last-child { display:none; }
   /* Community: stack on small screens */
   .community-grid { grid-template-columns:1fr; }
-}
-
-/* Show Verge logo link in comm-text on tablet/mobile */
-@media (max-width: 960px) {
-  .verge-mob-link { display:flex; }
 }
 
 /* ============================================================

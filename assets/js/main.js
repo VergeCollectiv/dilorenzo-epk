@@ -204,9 +204,6 @@
         collapseCard(card);
       } else {
         openExclusive(card);
-        if (MOBILE_MQ.matches) {
-          setTimeout(() => tab.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
-        }
       }
     });
   });
