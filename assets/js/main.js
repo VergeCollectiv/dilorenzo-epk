@@ -59,29 +59,37 @@
 })();
 
 // ---- COUNT-UP ---- //
+// Exposed so accordion expandCard() can call it directly
+function runCountUp(el) {
+  if (el.dataset.counted) return;
+  el.dataset.counted = '1';
+  const target = parseInt(el.dataset.target, 10);
+  const suffix = el.dataset.suffix || '';
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    el.textContent = target + suffix; return;
+  }
+  const dur = 1000;
+  const start = performance.now();
+  (function tick(now) {
+    const p = Math.min((now - start) / dur, 1);
+    const out = 1 - Math.pow(1 - p, 3);
+    el.textContent = Math.floor(out * target) + suffix;
+    if (p < 1) requestAnimationFrame(tick);
+  })(start);
+}
 (function () {
+  // Only observe stats that are NOT inside an accordion body
+  // (accordion stats are triggered by expandCard instead)
   const els = document.querySelectorAll('.vstat-n[data-target]');
   if (!els.length) return;
-  const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const obs = new IntersectionObserver((entries) => {
     entries.forEach(e => {
-      if (!e.isIntersecting) return;
-      const el = e.target;
-      const target = parseInt(el.dataset.target, 10);
-      const suffix = el.dataset.suffix || '';
-      if (prefersReduced) { el.textContent = target + suffix; return; }
-      const dur = 1400;
-      const start = performance.now();
-      (function tick(now) {
-        const p = Math.min((now - start) / dur, 1);
-        const out = 1 - Math.pow(1 - p, 3);
-        el.textContent = Math.floor(out * target) + suffix;
-        if (p < 1) requestAnimationFrame(tick);
-      })(start);
-      obs.unobserve(el);
+      if (e.isIntersecting) { runCountUp(e.target); obs.unobserve(e.target); }
     });
   }, { threshold: 0.5 });
-  els.forEach(el => obs.observe(el));
+  els.forEach(el => {
+    if (!el.closest('.acc-body')) obs.observe(el);
+  });
 })();
 
 // ---- SOUNDCLOUD WIDGET ---- //
@@ -174,6 +182,7 @@
     // Fire all reveals inside immediately — avoids IntersectionObserver
     // triggering mid-scroll which causes image scatter on mobile
     card.querySelectorAll('.reveal').forEach(el => el.classList.add('in'));
+    card.querySelectorAll('.vstat-n[data-target]').forEach(runCountUp);
     body.style.height = body.scrollHeight + 'px';
     body.addEventListener('transitionend', function onEnd() {
       if (card.classList.contains('open')) body.style.height = 'auto';
@@ -189,6 +198,7 @@
     card.classList.remove('open');
     const tab = card.querySelector('.acc-tab');
     if (tab) tab.setAttribute('aria-expanded', 'false');
+    card.querySelectorAll('.vstat-n[data-target]').forEach(el => delete el.dataset.counted);
   }
 
   function openExclusive(card) {
