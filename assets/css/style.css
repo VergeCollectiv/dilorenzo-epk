@@ -432,31 +432,46 @@ nav#nav.open .nav-mobile { display:flex; }
 .community-sec .wrap { max-width:var(--mw); margin:0 auto; padding: clamp(32px,5vh,56px) var(--pad) clamp(52px,8vh,80px); }
 
 /* Verge bar — full-width focal point above text/photos grid
-   Bar height is (Community heading) / 0.28, because the verge-logo.png is a
-   4500×4500 square with ~72% whitespace — text content is 28% of image height.
-   Setting logo height = bar height means text renders at exactly Community size. */
+   Bar height math: text content is 16.9% of the 4500×4500 logo PNG height
+   (content rows 1869-2630 = 761px). To render text at Community heading size
+   (clamp 38px→64px), bar height = heading / 0.169.
+   Mobile min: 22px / 0.169 ≈ 130px. Desktop max: 64px / 0.169 ≈ 379px.
+   Text center X in PNG: 38.6% from left (not centered — offset left).
+   Logo transform: translate(-38.6%, -50%) centers the visible text in the bar. */
 .verge-bar {
   display: block;
   position: relative;
   overflow: hidden;
-  height: clamp(107px, 19.6vw, 229px);
+  height: clamp(130px, 32.5vw, 379px);
   background: #D5CCB8; /* matches community-sec exactly — seamless by default */
-  border-top: 1px solid transparent;
-  border-bottom: 1px solid rgba(18,14,8,.1);
   text-decoration: none;
-  transition: border-color .38s var(--ease), background .38s var(--ease);
+  transition: background .38s var(--ease);
 }
+/* Lines grow outward from center on hover */
+.verge-bar::before,
+.verge-bar::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  right: 50%;
+  height: 1px;
+  background: rgba(18,14,8,.22);
+  transition: left .45s var(--ease), right .45s var(--ease);
+  pointer-events: none;
+}
+.verge-bar::before { top: 0; }
+.verge-bar::after  { bottom: 0; }
+.verge-bar:hover::before,
+.verge-bar:hover::after { left: 0; right: 0; }
 .verge-bar:hover {
-  background: rgba(18,14,8,.03);
-  border-top-color: rgba(18,14,8,.18);
-  border-bottom-color: rgba(18,14,8,.22);
+  background: rgba(213,204,184,.6);
 }
 .vb-logo {
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
-  height: 100%; /* fills bar — 28% of this height = visible "verge" text = Community heading */
+  transform: translate(-38.6%, -50%); /* centers visible text, not image midpoint */
+  height: 100%;
   width: auto;
   display: block;
 }
@@ -854,9 +869,9 @@ nav#nav.open .nav-mobile { display:flex; }
   .hero-loc    { order: 0; }
   .hero-socials a { color: rgba(250,248,245,.75); }
 
-  /* Folders: fully rounded on all corners, gap reveals rounding */
+  /* Top corners only — preserves the stacked-folder look */
   .section-card {
-    border-radius: 20px;
+    border-radius: 20px 20px 0 0;
     margin-top: 10px;
     overflow: hidden;
   }
