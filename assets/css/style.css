@@ -418,7 +418,7 @@ nav#nav.open .nav-mobile { display:flex; }
 .yt-cta { font-size:12px; font-weight:500; letter-spacing:.18em; text-transform:uppercase; color:rgba(255,255,255,.8); }
 
 /* SoundCloud */
-.sc-wrap { border-radius:var(--r-lg); overflow:hidden; background:#1a1a1a; aspect-ratio:16/9; }
+.sc-wrap { border-radius:var(--r-lg); overflow:hidden; background:#1a1a1a; height:clamp(300px,38vh,420px); }
 .sc-wrap iframe { display:block; width:100%; height:100%; border:none; }
 
 
@@ -431,24 +431,33 @@ nav#nav.open .nav-mobile { display:flex; }
 }
 .community-sec .wrap { max-width:var(--mw); margin:0 auto; padding: clamp(32px,5vh,56px) var(--pad) clamp(52px,8vh,80px); }
 
-/* Verge bar — full-width focal point above text/photos grid */
+/* Verge bar — full-width focal point above text/photos grid
+   Bar height is (Community heading) / 0.28, because the verge-logo.png is a
+   4500×4500 square with ~72% whitespace — text content is 28% of image height.
+   Setting logo height = bar height means text renders at exactly Community size. */
 .verge-bar {
   display: block;
   position: relative;
   overflow: hidden;
-  height: clamp(88px,11vw,148px);
-  background: #D5CCB8; /* matches community-sec exactly — seamless */
+  height: clamp(107px, 19.6vw, 229px);
+  background: #D5CCB8; /* matches community-sec exactly — seamless by default */
+  border-top: 1px solid transparent;
   border-bottom: 1px solid rgba(18,14,8,.1);
   text-decoration: none;
+  transition: border-color .38s var(--ease), background .38s var(--ease);
+}
+.verge-bar:hover {
+  background: rgba(18,14,8,.03);
+  border-top-color: rgba(18,14,8,.18);
+  border-bottom-color: rgba(18,14,8,.22);
 }
 .vb-logo {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  height: clamp(34px, 4.8vw, 58px); /* ~10% smaller than Community heading text */
+  height: 100%; /* fills bar — 28% of this height = visible "verge" text = Community heading */
   width: auto;
-  object-fit: contain;
   display: block;
 }
 .vb-overlay {
@@ -458,17 +467,15 @@ nav#nav.open .nav-mobile { display:flex; }
   align-items: flex-start;
   justify-content: flex-end;
   padding: clamp(10px,1.4vw,18px) clamp(14px,2vw,24px);
-  background: rgba(18,14,8,0);
-  transition: background .35s var(--ease);
+  pointer-events: none;
 }
 .vb-arrow {
   font-size: clamp(14px,1.6vw,20px);
   color: rgba(18,14,8,0);
-  transition: color .35s var(--ease), transform .35s var(--ease);
+  transition: color .38s var(--ease), transform .38s var(--ease);
   line-height: 1;
 }
-.verge-bar:hover .vb-overlay { background: rgba(18,14,8,.1); }
-.verge-bar:hover .vb-arrow   { color: rgba(18,14,8,.55); transform: translate(3px, -3px); }
+.verge-bar:hover .vb-arrow { color: rgba(18,14,8,.5); transform: translate(3px,-3px); }
 
 .community-grid {
   display: grid;
@@ -847,10 +854,10 @@ nav#nav.open .nav-mobile { display:flex; }
   .hero-loc    { order: 0; }
   .hero-socials a { color: rgba(250,248,245,.75); }
 
-  /* Folders: uniform rounded top, clear gap */
+  /* Folders: fully rounded on all corners, gap reveals rounding */
   .section-card {
-    border-radius: 20px 20px 0 0;
-    margin-top: 8px;
+    border-radius: 20px;
+    margin-top: 10px;
     overflow: hidden;
   }
 

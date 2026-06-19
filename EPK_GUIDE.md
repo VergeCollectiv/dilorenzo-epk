@@ -405,3 +405,9 @@ git push
 | 2026-06-19 | Gallery mobile: consistent 2-col 4/3 above+below ticker; removed 480px override that broke congruence |
 | 2026-06-19 | Community: .verge-mob-link (inline logo + arrow) added inside comm-text, visible at ≤960px only |
 | 2026-06-19 | YouTube cover photo updated to verge-highlight-1.jpg; .watch-more link + CSS removed |
+| 2026-06-19 | Community section: verge-col replaced with full-width .verge-bar (focal point, hover-only overlay + border highlight) |
+| 2026-06-19 | Verge bar logo: height=100% of bar; bar height=clamp(107px,19.6vw,229px) derived from Community heading ÷ 0.28 (PNG whitespace ratio) — text matches Community size |
+| 2026-06-19 | Mobile section cards: border-radius:20px all corners — gap reveals full rounding on every edge |
+| 2026-06-19 | SC embed: classic (no visual=true) track-list player; sc-wrap fixed height clamp(300px,38vh,420px) |
+| 2026-06-19 | Community first photo: object-position center 20% to frame Verge sign |
+| 2026-06-19 | Count-up stats: fire via expandCard() not IntersectionObserver; reset on collapse so re-open replays |
